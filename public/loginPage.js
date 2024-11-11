@@ -1,36 +1,57 @@
 "use strict";
 
-class UserForm {
-    constructor() {
-        this.loginFormCallback = null;
-        this.registerFormCallback = null;
-    }
+if (typeof UserForm === "undefined") {
+    class UserForm {
+        constructor() {
+            this.loginFormCallback = null;
+            this.registerFormCallback = null;
+        }
 
-    showMessage(message) {
-        console.log("Сообщение:", message);
-        alert("Сообщение: " + message);
-    }
-
-    showError(error) {
-        console.error("Ошибка:", error);
-        alert("Ошибка: " + error);
+        displayError(message) {
+            alert(`Ошибка: ${message}`);
+        }
     }
 }
 
-class UserForm {
-    constructor() {
-        this.loginFormCallback = null;
-        this.registerFormCallback = null;
-    }
+if (typeof ApiConnector === "undefined") {
+    class ApiConnector {
+        static login({ login, password }, callback) {
+            fetch("http://localhost:8000/", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ login, password })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log("Ответ сервера на авторизацию:", data);
+                callback(data);
+            })
+            .catch(error => {
+                console.error("Ошибка запроса:", error);
+                callback({ success: false, error: "Ошибка соединения с сервером" });
+            });
+        }
 
-    showMessage(message) {
-        console.log("Сообщение:", message);
-        alert("Сообщение: " + message);
-    }
-
-    showError(error) {
-        console.error("Ошибка:", error);
-        alert("Ошибка: " + error);
+        static register({ login, password }, callback) {
+            fetch("https://example.com/api/register", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ login, password })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log("Ответ сервера на регистрацию:", data);
+                callback(data);
+            })
+            .catch(error => {
+                console.error("Ошибка запроса:", error);
+                callback({ success: false, error: "Ошибка соединения с сервером" });
+            });
+        }
     }
 }
 
@@ -38,40 +59,24 @@ const userForm = new UserForm();
 
 userForm.loginFormCallback = function(data) {
     ApiConnector.login(data, (response) => {
-        console.log("Ответ сервера при авторизации:", response);
         if (response.success) {
-            userForm.showMessage("Авторизация успешна!");
             location.reload();
         } else {
-            userForm.showError(response.error || "Неверный логин или пароль");
+            this.displayError(response.error);
         }
     });
 };
 
 userForm.registerFormCallback = function(data) {
     ApiConnector.register(data, (response) => {
-        console.log("Ответ сервера при регистрации:", response);
         if (response.success) {
-            userForm.showMessage("Регистрация успешна!");
             location.reload();
         } else {
-            userForm.showError(response.error || "Ошибка регистрации");
+            this.displayError(response.error);
         }
     });
 };
 
-document.getElementById("loginButton").addEventListener("click", () => {
-    const loginData = {
-        login: "oleg@demo.ru",
-        password: "demo"
-    };
-    userForm.loginFormCallback(loginData);
-});
+userForm.loginFormCallback({ login: "oleg@demo.ru", password: "demo" });
+userForm.registerFormCallback({ login: "newuser@demo.ru", password: "password123" });
 
-document.getElementById("registerButton").addEventListener("click", () => {
-    const registerData = {
-        login: "newuser@demo.ru",
-        password: "password123"
-    };
-    userForm.registerFormCallback(registerData);
-});
