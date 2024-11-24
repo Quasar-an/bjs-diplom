@@ -1,82 +1,73 @@
 "use strict";
 
-if (typeof UserForm === "undefined") {
-    class UserForm {
-        constructor() {
-            this.loginFormCallback = null;
-            this.registerFormCallback = null;
+class UserForm {
+    constructor() {
+        this.loginForm = document.getElementById("login");
+        this.registerForm = document.getElementById("register");
+
+        this.init();
+    }
+
+    init() {
+        if (this.loginForm) {
+            this.loginForm.addEventListener("submit", (event) => {
+                event.preventDefault();
+                const formData = new FormData(this.loginForm);
+                const login = formData.get("email");
+                const password = formData.get("password");
+
+                if (this.loginFormCallback) {
+                    this.loginFormCallback({ login, password });
+                }
+            });
         }
 
-        displayError(message) {
-            alert(`Ошибка: ${message}`);
+        if (this.registerForm) {
+            this.registerForm.addEventListener("submit", (event) => {
+                event.preventDefault();
+                const formData = new FormData(this.registerForm);
+                const login = formData.get("email");
+                const password = formData.get("password");
+
+                if (this.registerFormCallback) {
+                    this.registerFormCallback({ login, password });
+                }
+            });
         }
     }
-}
 
-if (typeof ApiConnector === "undefined") {
-    class ApiConnector {
-        static login({ login, password }, callback) {
-            fetch("http://localhost:8000/", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({ login, password })
-            })
-            .then(response => response.json())
-            .then(data => {
-                console.log("Ответ сервера на авторизацию:", data);
-                callback(data);
-            })
-            .catch(error => {
-                console.error("Ошибка запроса:", error);
-                callback({ success: false, error: "Ошибка соединения с сервером" });
-            });
-        }
 
-        static register({ login, password }, callback) {
-            fetch("https://example.com/api/register", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({ login, password })
-            })
-            .then(response => response.json())
-            .then(data => {
-                console.log("Ответ сервера на регистрацию:", data);
-                callback(data);
-            })
-            .catch(error => {
-                console.error("Ошибка запроса:", error);
-                callback({ success: false, error: "Ошибка соединения с сервером" });
-            });
-        }
+    setLoginFormCallback(callback) {
+        this.loginFormCallback = callback;
+    }
+
+    setRegisterFormCallback(callback) {
+        this.registerFormCallback = callback;
+    }
+
+    displayError(message) {
+        alert(`Ошибка: ${message}`);
     }
 }
 
 const userForm = new UserForm();
 
-userForm.loginFormCallback = function(data) {
+userForm.setLoginFormCallback((data) => {
     ApiConnector.login(data, (response) => {
         if (response.success) {
-            location.reload();
+            console.log("Успешная авторизация", response);
         } else {
-            this.displayError(response.error);
+            userForm.displayError(response.error || "Неверный логин или пароль.");
         }
     });
-};
+});
 
-userForm.registerFormCallback = function(data) {
+userForm.setRegisterFormCallback((data) => {
     ApiConnector.register(data, (response) => {
         if (response.success) {
-            location.reload();
-        } else {
-            this.displayError(response.error);
+            console.log("Успешная регистрация", response);
+            } else {
+            userForm.displayError(response.error || "Ошибка регистрации.");
         }
     });
-};
-
-userForm.loginFormCallback({ login: "oleg@demo.ru", password: "demo" });
-userForm.registerFormCallback({ login: "newuser@demo.ru", password: "password123" });
-
+});
